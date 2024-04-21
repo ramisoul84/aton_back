@@ -19,8 +19,8 @@ export class ClientService {
     return this.clientRepository.save(createClientDto);
   }
 
-  findAll(): Promise<Client[]> {
-    return this.clientRepository.find();
+  async findAll(): Promise<Client[]> {
+    return await this.clientRepository.find({ relations: { user: true } });
   }
 
   findOne(accountNumber: number): Promise<Client | null> {

@@ -61,4 +61,11 @@ export class CreateClientDto {
     default: 'PENDING',
   })
   status: 'PENDING' | 'IN_PROGRESS' | 'REJECTED' | 'CLOSED';
+
+  @ApiProperty({
+    required: true,
+    description: 'User Id',
+    example: '1',
+  })
+  userId: number;
 }

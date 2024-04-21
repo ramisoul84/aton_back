@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Client } from 'src/resources/client/entities/client.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity('user')
 export class User {
@@ -28,4 +36,8 @@ export class User {
 
   @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt?: Date;
+
+  @OneToMany(() => Client, (client: Client) => client.user)
+  @JoinColumn()
+  clients: Client[];
 }

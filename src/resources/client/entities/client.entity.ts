@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from 'src/resources/user/entities/user.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('client')
 export class Client {
@@ -29,4 +36,11 @@ export class Client {
     default: 'PENDING',
   })
   status: 'PENDING' | 'IN_PROGRESS' | 'REJECTED' | 'CLOSED';
+
+  @Column()
+  userId: number;
+
+  @ManyToOne(() => User, (user) => user.clients)
+  @JoinColumn({ name: 'userId' })
+  user: User;
 }

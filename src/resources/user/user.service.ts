@@ -13,12 +13,15 @@ export class UserService {
   ) {}
 
   // Get All users from DB
-  findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(): Promise<User[]> {
+    return await this.userRepository.find({ relations: { clients: true } });
   }
   // Get a certain user from DB by ID
   findOne(id: number): Promise<User | null> {
-    return this.userRepository.findOneBy({ id });
+    return this.userRepository.findOne({
+      where: { id: id },
+      relations: ['clients'],
+    });
   }
 
   // Get a certain user from DB by username

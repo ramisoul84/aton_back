@@ -43,6 +43,6 @@ export class ClientController {
 
   @Delete(':id')
   remove(@Param('id') id: number) {
-    return this.clientService.remove(+id);
+    return this.clientService.remove(id);
   }
 }
