@@ -1,4 +1,5 @@
 import { IsOptional, IsString, MinLength } from 'class-validator';
+import { Client } from 'src/resources/client/entities/client.entity';
 
 export class CreateUserDto {
   @IsOptional()
@@ -27,4 +28,6 @@ export class CreateUserDto {
   createdAt?: Date;
 
   lastLoginAt?: Date;
+
+  clients?: Client[];
 }
