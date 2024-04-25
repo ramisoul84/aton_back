@@ -1,17 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientModule } from './resources/client/client.module';
-import { UserModule } from './resources/user/user.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { User } from './resources/user/entities/user.entity';
-import { Client } from './resources/client/entities/client.entity';
-import { DatabaseModule } from './modules/db/database.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from 'src/resources/user/entities/user.entity';
+import { Client } from 'src/resources/client/entities/client.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: '.env', isGlobal: true }),
-    //DatabaseModule,
+    ConfigModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -26,9 +21,6 @@ import { DatabaseModule } from './modules/db/database.module';
       }),
       inject: [ConfigService],
     }),
-    ClientModule,
-    UserModule,
-    AuthModule,
   ],
 })
-export class AppModule {}
+export class DatabaseModule {}

@@ -26,7 +26,7 @@ export class AuthService {
     const newUser = new User();
     newUser.surname = user.surname.toUpperCase();
     newUser.name = user.name.toUpperCase();
-    newUser.patronymic = user.patronymic.toUpperCase();
+    newUser.patronymic = user.patronymic?.toUpperCase();
     newUser.username = username.toLowerCase();
     newUser.password = await bcrypt.hash(user.password, 10);
     newUser.isAdmin = count === 0 ? true : false;
