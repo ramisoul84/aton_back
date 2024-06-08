@@ -1,7 +1,7 @@
-FROM node:20.10.0
+FROM node:20.10.0 as builder
 
 # Create app directory
-WORKDIR /app
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 
@@ -12,9 +12,11 @@ RUN npm install
 COPY . .
 
 # Creates a "dist" folder with the production build
-RUN npm run build
+#RUN npm run build
+
+
 
 # Start the server 
-CMD [ "npm", "run", "start:dev" ]
+CMD [ "npm", "run","start:dev"]
 
 
