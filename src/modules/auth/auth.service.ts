@@ -7,6 +7,7 @@ import { User } from 'src/resources/user/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import { LoginResponse } from './dto/login-res';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +15,7 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async register(user: RegisterUserDto): Promise<User> {
@@ -48,7 +50,11 @@ export class AuthService {
       lastLoginAt: new Date(),
     });
     const payload = { sub: foundUser.id, username: foundUser.username };
-    const access_token = await this.jwtService.signAsync(payload);
+    const secret = this.configService.get('JWT_KEY');
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: secret,
+      expiresIn: '1d',
+    });
     delete foundUser.password;
     const res = {
       id: foundUser.id,

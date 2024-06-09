@@ -14,6 +14,7 @@ export class UserService {
 
   // Get All users from DB
   async findAll(): Promise<User[]> {
+    console.log('find all users');
     return await this.userRepository.find({ relations: { clients: true } });
   }
   // Get a certain user from DB by ID

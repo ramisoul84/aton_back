@@ -10,8 +10,6 @@ import { User } from 'src/resources/user/entities/user.entity';
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
       global: true,
-      secret: 'ddd',
-      signOptions: { expiresIn: '60s' },
     }),
   ],
   providers: [AuthService],
