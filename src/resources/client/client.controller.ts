@@ -13,12 +13,12 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Client } from './entities/client.entity';
-import { AuthGuard } from 'src/modules/auth/auth.guard';
+import { AccessTokenGuard } from 'src/modules/auth/guards/accessToken.guard';
 
 @ApiTags('CLIENT')
-@Controller('client')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(AccessTokenGuard)
+@Controller('client')
 export class ClientController {
   constructor(private readonly clientService: ClientService) {}
 

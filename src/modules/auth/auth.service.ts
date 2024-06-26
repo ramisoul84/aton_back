@@ -1,71 +1,109 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { LoginUserDto } from './dto/login-user.dto';
-import { RegisterUserDto } from './dto/register-user.dto';
+
+import { CreateUserDto } from 'src/resources/user/dto/create-user.dto';
 import { User } from 'src/resources/user/entities/user.entity';
+import { UserService } from 'src/resources/user/user.service';
+import { AuthDto } from './dto/auth.dto';
 import * as bcrypt from 'bcrypt';
-import { LoginResponse } from './dto/login-res';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private jwtService: JwtService,
+    private userService: UserService,
     private configService: ConfigService,
+    private jwtService: JwtService,
   ) {}
 
-  async register(user: RegisterUserDto): Promise<User> {
-    const { username } = user;
-    const foundUser = await this.userRepository.findOneBy({ username });
-    if (foundUser) {
-      throw new HttpException('Conflict', HttpStatus.CONFLICT);
-    }
-    const count = await this.userRepository.count();
-    const newUser = new User();
-    newUser.surname = user.surname.toUpperCase();
-    newUser.name = user.name.toUpperCase();
-    newUser.patronymic = user.patronymic?.toUpperCase();
-    newUser.username = username.toLowerCase();
-    newUser.password = await bcrypt.hash(user.password, 10);
-    newUser.isAdmin = count === 0 ? true : false;
-    newUser.createdAt = new Date();
-    return this.userRepository.save(newUser);
+  async register(createUserDto: CreateUserDto): Promise<User> {
+    return this.userService.create(createUserDto);
   }
 
-  async login(user: LoginUserDto): Promise<LoginResponse> {
+  async login(user: AuthDto) {
     const { username, password } = user;
-    const foundUser: User = await this.userRepository.findOneBy({ username });
-    if (!foundUser) {
-      throw new HttpException('Not Found!', HttpStatus.NOT_FOUND);
+    const userExists: User = await this.userService.findOneByUsername(username);
+    if (!userExists) {
+      throw new HttpException('NOT FOUND!', HttpStatus.NOT_FOUND);
     }
-    const isMatch: boolean = await bcrypt.compare(password, foundUser.password);
-    if (!isMatch) {
-      throw new HttpException('Not Found!', HttpStatus.NOT_FOUND);
+    const passwordMatches: boolean = await bcrypt.compare(
+      password,
+      userExists.password,
+    );
+    if (!passwordMatches) {
+      throw new HttpException('NOT FOUND!', HttpStatus.NOT_FOUND);
     }
-    await this.userRepository.update(foundUser.id, {
+    await this.userService.update(userExists.id, {
       lastLoginAt: new Date(),
     });
-    const payload = { sub: foundUser.id, username: foundUser.username };
-    const secret = this.configService.get('JWT_KEY');
-    const access_token = await this.jwtService.signAsync(payload, {
-      secret: secret,
-      expiresIn: '1d',
-    });
-    delete foundUser.password;
-    const res = {
-      id: foundUser.id,
-      surname: foundUser.surname,
-      name: foundUser.name,
-      patronymic: foundUser.patronymic,
-      username: foundUser.username,
-      isAdmin: foundUser.isAdmin,
-      access_token: access_token,
+    const tokens = await this.getTokens(userExists.id, userExists.username);
+    await this.updateRefreshToken(userExists.id, tokens.refreshToken);
+    return {
+      id: userExists.id,
+      username: userExists.username,
+      isAdmin: userExists.isAdmin,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
+  }
 
-    return res;
+  async logout(id: number) {
+    return this.userService.update(id, { refreshToken: null });
+  }
+
+  async hashData(data: string) {
+    return await bcrypt.hash(data, 10);
+  }
+
+  async updateRefreshToken(id: number, refreshToken: string) {
+    const hashedRefreshToken = await this.hashData(refreshToken);
+    await this.userService.update(id, {
+      refreshToken: hashedRefreshToken,
+    });
+  }
+
+  async getTokens(id: number, username: string) {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          sub: id,
+          username,
+        },
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          sub: id,
+          username,
+        },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '1d',
+        },
+      ),
+    ]);
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async refreshTokens(id: number, refreshToken: string) {
+    const user = await this.userService.findOne(id);
+    if (!user || !user.refreshToken)
+      throw new HttpException('UNAUTHORIZED', HttpStatus.UNAUTHORIZED);
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+    console.log(refreshTokenMatches);
+    if (!refreshTokenMatches)
+      throw new HttpException('UNAUTHORIZED', HttpStatus.UNAUTHORIZED);
+    const tokens = await this.getTokens(user.id, user.username);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
   }
 }

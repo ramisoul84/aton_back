@@ -3,7 +3,6 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  ManyToOne,
   OneToMany,
   JoinColumn,
 } from 'typeorm';
@@ -36,6 +35,9 @@ export class User {
 
   @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt?: Date;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  refreshToken: string;
 
   @OneToMany(() => Client, (client: Client) => client.user)
   @JoinColumn()
